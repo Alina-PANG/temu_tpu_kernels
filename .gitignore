@@ -1,0 +1,14 @@
+# Byte-compiled / cache files.
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Local run outputs and traces (verified reference summaries live in results/).
+/out/
+/tmp_results/
+*.xplane.pb
+*.pt.trace.json
+*.trace.json.gz
+*.tar.gz
+*.tar.gz.sha256

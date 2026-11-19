@@ -1,0 +1,59 @@
+# Kubernetes Job manifest for running the TorchTPU TPU v7x kernel benchmark
+# suite on one 4-chip (2x2x1 = 8 TensorCores) node.
+#
+# Replace <IMAGE_URI> with your loaded or registry image URI before applying:
+#   sed "s|<IMAGE_URI>|${IMAGE_URI}|g" k8s/job_tpu7x_2x2x1.yaml \
+#     | kubectl apply -f -
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: temu-torchtpu-kbench
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 7200
+  activeDeadlineSeconds: 5400
+  template:
+    metadata:
+      labels:
+        app: temu-torchtpu-kbench
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        cloud.google.com/gke-tpu-accelerator: tpu7x
+        cloud.google.com/gke-tpu-topology: 2x2x1
+      tolerations:
+      - key: google.com/tpu
+        operator: Exists
+        effect: NoSchedule
+      containers:
+      - name: bench
+        image: <IMAGE_URI>
+        command: ["/usr/local/bin/run_all.sh"]
+        env:
+        - name: SUITE
+          value: "all"
+        - name: OUT_DIR
+          value: "/results"
+        - name: ITERS
+          value: "10"
+        - name: WARMUP
+          value: "2"
+        - name: TRACE_MODE
+          value: "key"
+        resources:
+          requests:
+            google.com/tpu: 4
+          limits:
+            google.com/tpu: 4
+        volumeMounts:
+        - name: dshm
+          mountPath: /dev/shm
+        - name: results
+          mountPath: /results
+      volumes:
+      - name: dshm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 32Gi
+      - name: results
+        emptyDir: {}
